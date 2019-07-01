@@ -1,0 +1,298 @@
+.data
+selectExp: .asciiz "Select operation: "
+addExp: .asciiz "\n1. Add"
+subExp: .asciiz "\n2. Substract"
+mulExp: .asciiz "\n3. Multiply"
+divExp: .asciiz "\n4. Divide"
+pwExp: .asciiz "\n5. Power\n"
+rootExp: .asciiz "6. Root\n"
+exitExp: .asciiz "0. Exit\n"
+
+choiceExp: .asciiz "\nChoice: "
+
+HowManyNumsExp: .asciiz "Quantity of numbers: "
+NumExp: .asciiz "Enter number: "
+
+resultExp: .asciiz "Result: "
+
+divBy0Exp: .asciiz "It is not allowed to divide by 0\n"
+rootOfNegateExp: .asciiz "The root of neagtive number is not real"	
+tooLittleNumbersExp: .asciiz "There are too little numbers to operate on"	
+
+.text
+
+Menu:
+
+la $a0, selectExp
+li $v0, 4
+syscall
+
+la $a0, addExp
+li $v0, 4
+syscall
+
+la $a0, subExp
+li $v0, 4
+syscall
+
+la $a0, mulExp
+li $v0, 4
+syscall
+
+la $a0, divExp
+li $v0, 4
+syscall
+
+la $a0, pwExp
+li $v0, 4
+syscall
+
+la $a0, rootExp
+li $v0, 4
+syscall
+
+la $a0, exitExp
+li $v0, 4
+syscall
+
+li $v0, 5
+syscall
+
+#addi $t2, $zero, 0
+
+beq $v0, 1, Addition
+beq $v0, 2, Substraction
+beq $v0, 3, Multiplication
+beq $v0, 4, Division
+beq $v0, 5, Power
+beq $v0, 6, Root
+bnez $v0, Menu
+
+li $v0, 10
+syscall
+
+#######################################################
+Addition:
+
+jal HowManyNumbers
+
+AdditionLoop:
+
+jal PickNumber
+
+add $t2, $t2, $t1
+subi $t0, $t0, 1
+
+bnez $t0, AdditionLoop
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+########################################################
+Substraction:
+
+jal HowManyNumbers
+
+subi $t0, $t0, 1
+
+jal PickNumber
+
+addi $t2, $t1, 0
+
+SubstractionLoop:
+
+jal PickNumber
+
+sub $t2, $t2, $t1
+subi $t0, $t0, 1
+
+bnez $t0, SubstractionLoop
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+#######################################################
+Multiplication:
+
+addi $t2, $zero, 1 
+
+jal HowManyNumbers
+
+MultiplicationLoop:
+
+jal PickNumber
+
+mul $t2, $t2, $t1
+subi $t0, $t0, 1
+
+bnez $t0, MultiplicationLoop
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+
+########################################################
+Division:
+
+jal PickNumber
+
+addi $t2, $t1, 0
+
+jal PickNumber
+
+addi $t3, $t1, 0
+
+beqz $t3, next 
+div $t2, $t2, $t3
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+next:
+
+la $a0, divBy0Exp
+li $v0, 4
+syscall
+
+j Division
+
+#######################################################
+Power:
+
+jal PickNumber
+
+addi $t2, $zero, 1
+addi $t4, $t1, 0
+
+jal PickNumber
+
+addi $t3, $t1, 0
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+beqz $t3, ShowResult
+
+PowerLoop:
+
+mul $t2, $t2, $t4
+subi $t3, $t3, 1
+
+bnez $t3, PowerLoop
+
+sw $t2, 0($sp)
+
+j ShowResult
+
+#########################################################
+Root:
+
+jal PickNumber
+
+addi $t3, $t1, 0 # t3 - liczba wprowadzona
+
+bltz $t3, Nan
+
+addi $t0, $zero, 0 # t0 - iterator
+addi $t2, $t3, 0 # t2 - wynik
+div $t5, $t3, 2 # t5 - zmienna pomocnicza t3/2
+
+bnez $t3, sqrtLoop
+
+addi $t2, $zero, 0
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+sqrtLoop:
+
+div $t4, $t3, $t2 # t4 - zmienna pomocnicza t3/t2
+add $t2, $t2, $t4
+div $t2, $t2, 2
+
+addi $t0, $t0, 1
+
+blt $t0, $t5, sqrtLoop
+
+addi $sp, $sp, -4
+sw $t2, 0($sp)
+
+j ShowResult
+
+
+#########################################################
+ShowResult:
+
+la $a0, resultExp
+li $v0, 4
+syscall
+
+lw $a0, ($sp)
+addi $sp, $sp, 4
+
+li $v0, 1
+syscall	
+
+li $v0, 10
+syscall
+
+#########################################################
+HowManyNumbers:
+
+la $a0, HowManyNumsExp
+li $v0, 4
+syscall
+
+li $v0, 5
+syscall
+
+addi $t0, $v0, 0
+
+ble $t0, 1 NotEnoughNumbers
+
+jr $ra
+
+#########################################################
+PickNumber:
+
+la $a0, NumExp
+li $v0, 4
+
+syscall
+
+li $v0, 5
+syscall
+
+addi $t1, $v0, 0
+
+jr $ra
+
+#########################################################
+NotEnoughNumbers:
+
+la $a0, tooLittleNumbersExp
+li $v0, 4
+syscall
+
+li $v0, 10
+syscall
+
+#########################################################
+Nan:
+
+la $a0, rootOfNegateExp
+li $v0, 4
+syscall
+
+li $v0, 10
+syscall
